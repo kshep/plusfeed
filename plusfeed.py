@@ -29,7 +29,7 @@ class MainPage(webapp.RequestHandler):
                     Note: The feed will only display *public* items - if none of your posts are public, the feed won't work.
                     </p>
                     <p>
-                    You can grab the source for this app here: <a href="http://www.russellbeattie.com/download/plusfeed.zip">http://www.russellbeattie.com/download/plusfeed.zip</a>
+                    You can grab the source for this app here: <a href="https://github.com/russellbeattie/plusfeed">https://github.com/russellbeattie/plusfeed</a>
                     </p>
                 </body>
               </html>""")
