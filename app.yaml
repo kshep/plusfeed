@@ -1,0 +1,11 @@
+application: plusfeed
+version: 1
+runtime: python
+api_version: 1
+
+handlers:
+- url: /
+  script: plusfeed.py
+  
+- url: /.+
+  script: plusfeed.py
