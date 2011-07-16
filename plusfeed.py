@@ -3,8 +3,8 @@ from google.appengine.ext.webapp.util import run_wsgi_app
 from google.appengine.api import urlfetch
 import re
 import logging
+import datetime
 from google.appengine.api import memcache
-
 from google.appengine.dist import use_library
 use_library('django', '1.2')
 
@@ -12,13 +12,25 @@ from django.utils import simplejson as json
 from django.utils import feedgenerator
 from django.utils.html import strip_tags
 from datetime import datetime
+import HTMLParser
 
 class MainPage(webapp.RequestHandler):
     def get(self):
+        list = memcache.get('list')
+        #logging.info(list)
         self.response.out.write("""
             <html>
                 <head>
                 <title>Google Plus Feed</title>
+                <style>
+                body{
+                    font-family: sans-serif;
+                    font-size: 14px;
+                }
+                li{
+                    font-size: 11px;
+                }
+                </style>
                 </head>
                 <body>
                     <h1>Unofficial Google+ User Feed</h1>
@@ -31,6 +43,20 @@ class MainPage(webapp.RequestHandler):
                     <p>
                     You can grab the source for this app here: <a href="https://github.com/russellbeattie/plusfeed">https://github.com/russellbeattie/plusfeed</a>
                     </p>
+                    <p>""")
+        if list:
+            self.response.out.write('<h3>')
+            self.response.out.write(len(list))
+            self.response.out.write("""
+                        Google+ profiles currently being served:</h3>
+                        <ol>""")
+
+            for k, v in list.iteritems():
+                self.response.out.write('<li><a href="https://plus.google.com/' + k + '">' + v + '</a></li>')
+            self.response.out.write('</ol>')
+        
+        self.response.out.write("""
+                    </p>
                 </body>
               </html>""")
 
@@ -38,13 +64,27 @@ class MainPage(webapp.RequestHandler):
 class FeedPage(webapp.RequestHandler):
     def get(self, p):
         
+        HTTP_DATE_FMT = "%a, %d %b %Y %H:%M:%S GMT"
+
+        if 'If-Modified-Since' in self.request.headers:
+            last_seen = datetime.strptime(self.request.headers['If-Modified-Since'], HTTP_DATE_FMT)
+            ud = memcache.get('time_' + p)
+            if ud and last_seen and ud <= last_seen:
+                logging.info('returning 304')
+                self.response.set_status(304)
+                return
+        
+        #logging.info(self.request.headers)
+            
         op = memcache.get(p)
         if op is not None:
+            logging.info('delivering from cache')
             self.response.headers['Content-Type'] = 'application/atom+xml'
             self.response.out.write(op)
             return
     
         try:
+            logging.info('re-requesting feed')
             url = 'https://plus.google.com/_/stream/getactivities/' + p + '/?sp=[1,2,"' + p + '",null,null,null,null,"social.google.com",[]]'
             result = urlfetch.fetch(url)
             if result.status_code == 200:
@@ -66,6 +106,7 @@ class FeedPage(webapp.RequestHandler):
 
 
                 author = posts[0][3]
+                updated = datetime.fromtimestamp(float(posts[0][5])/1000)
                 
                 feed = feedgenerator.Atom1Feed(
                     title = "Google Plus User Feed - " + author, 
@@ -77,7 +118,7 @@ class FeedPage(webapp.RequestHandler):
                 
                 # self.response.headers['Content-Type'] = 'text/plain'
                 for post in posts:
-                    logging.info('post ' + post[21])
+                    #logging.info('post ' + post[21])
                     dt = datetime.fromtimestamp(float(post[5])/1000)
                     permalink = "https://plus.google.com/" + post[21]
                     
@@ -105,7 +146,13 @@ class FeedPage(webapp.RequestHandler):
                     if desc == '':
                         desc = permalink                    
                     
-                    ptitle = strip_tags(desc)[:75]
+                    
+                    ptitle = desc
+                    h = HTMLParser.HTMLParser()
+                    ptitle = h.unescape(ptitle)                    
+                    ptitle = strip_tags(ptitle)[:75]
+                    
+
                     
                     feed.add_item(
                         title = ptitle,
@@ -115,8 +162,22 @@ class FeedPage(webapp.RequestHandler):
                     )
                 
                 output = feed.writeString('UTF-8')
-                memcache.add(p, output, 15 * 60)
+                memcache.set(p, output, 15 * 60)
+                memcache.set('time_' + p, updated)
                 
+                list = {}
+                mlist = memcache.get('list')
+                
+                if mlist:
+                    for k,v in mlist.iteritems():
+                        list[k] = v
+                
+                list[p] = author
+                memcache.set('list', list)
+                
+                
+                self.response.headers['Last-Modified'] = updated.strftime(HTTP_DATE_FMT)
+                #self.response.headers['ETag'] = '"%s"' % (content.etag,)
                 self.response.headers['Content-Type'] = 'application/atom+xml'
                 self.response.out.write(output)
 
