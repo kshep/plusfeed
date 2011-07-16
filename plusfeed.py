@@ -31,11 +31,15 @@ class MainPage(webapp.RequestHandler):
                     font-size: 11px;
                 }
                 </style>
+                <script type="text/javascript" src="https://apis.google.com/js/plusone.js"></script>
                 </head>
                 <body>
                     <h1>Unofficial Google+ User Feed</h1>
                     <p>
                     Add the Google+ user number at the end of this URL for their profile feed. Like this: <a href="http://plusfeed.appspot.com/104961845171318028721">http://plusfeed.appspot.com/104961845171318028721</a>.
+                    </p>
+                    <p>
+                    <g:plusone></g:plusone>
                     </p>
                     <p>
                     Note: The feed will only display *public* items - if none of your posts are public, the feed won't work.
@@ -52,7 +56,7 @@ class MainPage(webapp.RequestHandler):
                         <ol>""")
 
             for k, v in list.iteritems():
-                self.response.out.write('<li><a href="https://plus.google.com/' + k + '">' + v + '</a></li>')
+                self.response.out.write('<li><a href="https://plus.google.com/' + k + '">' + v + '</a> [<a href="/' + k + '">feed</a>]</li>')
             self.response.out.write('</ol>')
         
         self.response.out.write("""
