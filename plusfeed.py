@@ -123,9 +123,16 @@ class FeedPage(webapp.RequestHandler):
                     author_name = author,
                     feed_url = "http://plusfeeds.appspot.com/" + p)
                 
-                # self.response.headers['Content-Type'] = 'text/plain'
+                count = 0
+                
                 for post in posts:
                     #logging.info('post ' + post[21])
+                    
+                    count = count + 1
+                    if count > 10:
+                        break
+                    
+                    
                     dt = datetime.fromtimestamp(float(post[5])/1000)
                     permalink = "https://plus.google.com/" + post[21]
                     
