@@ -39,13 +39,16 @@ class MainPage(webapp.RequestHandler):
                     Add the Google+ user number at the end of this URL for their profile feed. Like this: <a href="http://plusfeed.appspot.com/104961845171318028721">http://plusfeed.appspot.com/104961845171318028721</a>.
                     </p>
                     <p>
-                    <g:plusone></g:plusone>
+                    If this site is useful, remember to give it a <g:plusone></g:plusone>
                     </p>
                     <p>
                     Note: The feed will only display *public* items - if none of your posts are public, the feed won't work.
                     </p>
                     <p>
-                    You can grab the source for this app here: <a href="https://github.com/russellbeattie/plusfeed">https://github.com/russellbeattie/plusfeed</a>
+                    You can grab the source for this app here: <a href="https://github.com/russellbeattie/plusfeed">https://github.com/russellbeattie/plusfeed</a>.
+                    </p>
+                    <p>
+                    <em>Originally created by <a href="http://www.russellbeattie.com">Russell Beattie</a></em>
                     </p>
                     <p>""")
         if list:
