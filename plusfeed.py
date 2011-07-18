@@ -12,7 +12,6 @@ from django.utils import simplejson as json
 from django.utils import feedgenerator
 from django.utils.html import strip_tags
 from datetime import datetime
-import HTMLParser
 
 class MainPage(webapp.RequestHandler):
     def get(self):
@@ -162,8 +161,7 @@ class FeedPage(webapp.RequestHandler):
                     
                     
                     ptitle = desc
-                    h = HTMLParser.HTMLParser()
-                    ptitle = h.unescape(ptitle)                    
+                    ptitle = htmldecode(ptitle)
                     ptitle = strip_tags(ptitle)[:75]
                     
 
@@ -204,7 +202,30 @@ class FeedPage(webapp.RequestHandler):
             self.error(500)
             self.response.out.write('<h1>500 Server Error</h1><p>' + str(err) + '</p>')
 
-application = webapp.WSGIApplication([('/', MainPage), (r'/(.+)', FeedPage)],debug=True)
+
+
+from htmlentitydefs import name2codepoint 
+def htmldecode(text):
+        """Decode HTML entities in the given text."""
+        if type(text) is unicode:
+                uchr = unichr
+        else:
+                uchr = lambda value: value > 255 and unichr(value) or chr(value)
+        def entitydecode(match, uchr=uchr):
+                entity = match.group(1)
+                if entity.startswith('#x'):
+                        return uchr(int(entity[2:], 16))
+                elif entity.startswith('#'):
+                        return uchr(int(entity[1:]))
+                elif entity in name2codepoint:
+                        return uchr(name2codepoint[entity])
+                else:
+                        return match.group(0)
+        charrefpat = re.compile(r'&(#(\d+|x[\da-fA-F]+)|[\w.:-]+);?')
+        return charrefpat.sub(entitydecode, text)
+
+
+application = webapp.WSGIApplication([('/', MainPage), (r'/(.+)', FeedPage)],debug=False)
 
 def main():
     run_wsgi_app(application)
