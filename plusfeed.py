@@ -63,6 +63,19 @@ class MainPage(webapp.RequestHandler):
         
         self.response.out.write("""
                     </p>
+                    <script type="text/javascript">
+
+                      var _gaq = _gaq || [];
+                      _gaq.push(['_setAccount', 'UA-24604146-1']);
+                      _gaq.push(['_trackPageview']);
+
+                      (function() {
+                        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+                      })();
+
+                    </script>
                 </body>
               </html>""")
 
@@ -73,12 +86,16 @@ class FeedPage(webapp.RequestHandler):
         HTTP_DATE_FMT = "%a, %d %b %Y %H:%M:%S GMT"
 
         if 'If-Modified-Since' in self.request.headers:
-            last_seen = datetime.strptime(self.request.headers['If-Modified-Since'], HTTP_DATE_FMT)
-            ud = memcache.get('time_' + p)
-            if ud and last_seen and ud <= last_seen:
-                logging.info('returning 304')
-                self.response.set_status(304)
-                return
+            try:
+
+                last_seen = datetime.strptime(self.request.headers['If-Modified-Since'], HTTP_DATE_FMT)
+                ud = memcache.get('time_' + p)
+                if ud and last_seen and ud <= last_seen:
+                    logging.info('returning 304')
+                    self.response.set_status(304)
+                    return
+            except:
+                test = 1
         
         #logging.info(self.request.headers)
             
@@ -174,7 +191,7 @@ class FeedPage(webapp.RequestHandler):
                     )
                 
                 output = feed.writeString('UTF-8')
-                memcache.set(p, output, 15 * 60)
+                memcache.set(p, output, 10 * 60)
                 memcache.set('time_' + p, updated)
                 
                 list = {}
